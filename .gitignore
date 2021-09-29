@@ -133,4 +133,7 @@ $RECYCLE.BIN/
 # Mac desktop service store files
 .DS_Store
 
+# ONNX model file
+*.onnx
+
 _NCrunch*
