@@ -2,7 +2,6 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using YOLOv4MLNet.DataStructures;
@@ -11,9 +10,9 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace ParallelYOLOv4
-{
+{   
     public class PictureProcessing
-    {
+    {        
         static string modelPath;
         public string ImageFolder { get; private set; }
         public string ImageOutputFolder { get; private set; }
@@ -23,12 +22,65 @@ namespace ParallelYOLOv4
             modelPath = ClassLibConfig.ModelPath;
             ImageFolder = imageFolder;
             ImageOutputFolder = Path.Combine(ImageFolder, ClassLibConfig.OutputFolder);
-            int workerThreads, completionThreads;
-            ThreadPool.GetMaxThreads(out workerThreads, out completionThreads);
-            Console.WriteLine($"WorkerThreads: {workerThreads}, completionThreads: {completionThreads}");
+
+            Directory.CreateDirectory(ImageOutputFolder);
         }
 
-        public IReadOnlyList<string> ProcessSingle(string imageName)
+        public async IAsyncEnumerable<ProcessResult> ProcessImagesAsync()
+        {
+            var images = Directory.GetFiles(ImageFolder);
+            List<Task<ProcessResult>> processors = new List<Task<ProcessResult>>();
+            CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+            CancellationToken cancellationToken = cancellationTokenSource.Token;
+            string imageName;
+            Console.WriteLine("Processing...");
+            foreach (var imagePath in images)
+            {
+                if (!cancellationToken.IsCancellationRequested)
+                {
+                    imageName = imagePath.Substring(imagePath.LastIndexOf(Path.DirectorySeparatorChar) + 1);
+                    Task<ProcessResult> task = ProcessSingleImage(imageName);
+                    processors.Add(task);
+                }
+                else
+                    break;
+            }
+
+            List<int> checkTasks = new List<int>();
+            while (processors.Count > checkTasks.Count)
+                for (int i = 0; i < processors.Count; i++)
+                    if (processors[i].IsCompleted && !checkTasks.Contains(i))
+                    {
+                        checkTasks.Add(i);
+                        yield return processors[i].Result;
+                    }
+
+            await Task.WhenAll(processors);
+        }
+
+        public async Task<ProcessResult> ProcessSingleImage(string imageName)
+        {
+            return await Task.Factory.StartNew(() =>
+            {
+                var labels = ObjectsSegmentation(imageName);
+                Dictionary<string, int> uniqueLabels = new Dictionary<string, int>();
+
+                foreach (var label in labels)
+                {
+                    if (uniqueLabels.ContainsKey(label))
+                        uniqueLabels[label] += 1;
+                    else
+                        uniqueLabels.Add(label, 1);
+                }                
+
+                ProcessResult imageResult;
+                imageResult.imageName = imageName;
+                imageResult.categoriesCounts = uniqueLabels;
+                return imageResult;                
+            });
+        }
+
+        private IReadOnlyList<string> ObjectsSegmentation(string imageName)
         {
             string imagePath = Path.Combine(ImageFolder, imageName);
             List<string> imageObjectCategories = new List<string>();
@@ -63,32 +115,7 @@ namespace ParallelYOLOv4
                 }
             }
             return imageObjectCategories;
-        }
-
-        public void ProcessImages()
-        {
-            var images = Directory.GetFiles(ImageFolder);
-            var predictiAll = Task.Factory.StartNew(() =>
-            {
-                List<Task> processors = new List<Task>();
-                CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
-                CancellationToken cancellationToken = cancellationTokenSource.Token;
-                foreach (var imagePath in images)
-                {
-                    if (!cancellationToken.IsCancellationRequested)
-                    {
-                        string imageName = imagePath.Substring(imagePath.LastIndexOf(Path.DirectorySeparatorChar) + 1);
-                        var task = PredictionCore(imageName);
-                        processors.Add(task);
-                    }
-                    else
-                        break;
-                }
-                var job = Task.WhenAll(processors);
-                job.Wait();
-            });
-            predictiAll.Wait();            
-        }
+        }              
 
         private PredictionEngine<YoloV4BitmapData, YoloV4Prediction> MakePredictionModel()
         {
@@ -127,27 +154,6 @@ namespace ParallelYOLOv4
             // save model
             //mlContext.Model.Save(model, predictionEngine.OutputSchema, Path.ChangeExtension(modelPath, "zip"));
             return predictionEngine;
-        }
-
-        private async Task<IReadOnlyList<string>> PredictionCore(string imageName)
-        {
-            return await Task.Factory.StartNew(() =>
-            {
-                var labels = ProcessSingle(imageName);
-                Dictionary<string, int> uniqueLabels = new Dictionary<string, int>();
-
-                //Console.WriteLine(imageName + " contains next objects: " + string.Join(", ", labels));
-                foreach (var label in labels)
-                {
-                    if (uniqueLabels.ContainsKey(label))
-                        uniqueLabels[label] += 1;
-                    else
-                        uniqueLabels.Add(label, 1);
-                }
-                Console.WriteLine(imageName + " contains next objects: " + 
-                    string.Join(", ", uniqueLabels.ToList().Select(pair => $"{pair.Key} x{pair.Value}")));
-                return labels;
-            });
         }
     }
 }
