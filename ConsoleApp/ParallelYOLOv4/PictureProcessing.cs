@@ -19,6 +19,17 @@ namespace ParallelYOLOv4
 
         public PictureProcessing(string imageFolder)
         {
+            try
+            {
+                if (!Directory.Exists(imageFolder))
+                    throw new DirectoryNotFoundException("This directory doesn't exists. Please try again.");
+            }
+            catch (DirectoryNotFoundException ex)
+            {
+                //Console.WriteLine(ex.Message);
+                throw ex;
+            }
+
             modelPath = ClassLibConfig.ModelPath;
             ImageFolder = imageFolder;
             ImageOutputFolder = Path.Combine(ImageFolder, ClassLibConfig.OutputFolder);
