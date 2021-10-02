@@ -8,6 +8,7 @@ using YOLOv4MLNet.DataStructures;
 using static Microsoft.ML.Transforms.Image.ImageResizingEstimator;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Concurrent;
 
 namespace ParallelYOLOv4
 {   
@@ -16,6 +17,8 @@ namespace ParallelYOLOv4
         static string modelPath;
         public string ImageFolder { get; private set; }
         public string ImageOutputFolder { get; private set; }
+
+        private BlockingCollection<ProcessResult> processResultsBuffer = null;
 
         public PictureProcessing(string imageFolder)
         {
@@ -35,6 +38,8 @@ namespace ParallelYOLOv4
             ImageOutputFolder = Path.Combine(ImageFolder, ClassLibConfig.OutputFolder);
 
             Directory.CreateDirectory(ImageOutputFolder);
+
+            processResultsBuffer = new BlockingCollection<ProcessResult>();
         }
 
         public async IAsyncEnumerable<ProcessResult> ProcessImagesAsync()
@@ -57,14 +62,14 @@ namespace ParallelYOLOv4
                     break;
             }
 
-            List<int> checkTasks = new List<int>();
-            while (processors.Count > checkTasks.Count)
-                for (int i = 0; i < processors.Count; i++)
-                    if (processors[i].IsCompleted && !checkTasks.Contains(i))
-                    {
-                        checkTasks.Add(i);
-                        yield return processors[i].Result;
-                    }
+            for (int i = 0; i < processors.Count; i++)
+            {
+                if (!cancellationToken.IsCancellationRequested)
+                    // the expression is blocked until any element appears in collection
+                    yield return processResultsBuffer.Take(); 
+                else
+                    break;
+            }
 
             await Task.WhenAll(processors);
         }
@@ -87,6 +92,7 @@ namespace ParallelYOLOv4
                 ProcessResult imageResult;
                 imageResult.imageName = imageName;
                 imageResult.categoriesCounts = uniqueLabels;
+                processResultsBuffer.Add(imageResult);
                 return imageResult;                
             });
         }
@@ -165,6 +171,12 @@ namespace ParallelYOLOv4
             // save model
             //mlContext.Model.Save(model, predictionEngine.OutputSchema, Path.ChangeExtension(modelPath, "zip"));
             return predictionEngine;
+        }
+
+        ~PictureProcessing()
+        {
+            if (processResultsBuffer != null)
+                processResultsBuffer.Dispose();
         }
     }
 }
