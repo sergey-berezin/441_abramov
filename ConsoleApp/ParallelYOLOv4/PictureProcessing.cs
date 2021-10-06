@@ -1,4 +1,6 @@
 ﻿using Microsoft.ML;
+using Microsoft.ML.Data;
+using Microsoft.ML.Transforms.Onnx;
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -12,50 +14,33 @@ using System.Collections.Concurrent;
 
 namespace ParallelYOLOv4
 {   
-    public class PictureProcessing
+    public class PictureProcessing : IDisposable
     {        
-        static string modelPath;
-        public string ImageFolder { get; private set; }
         public string ImageOutputFolder { get; private set; }
 
         private BlockingCollection<ProcessResult> processResultsBuffer = null;
+        private TransformerChain<OnnxTransformer> model = null;
 
-        public PictureProcessing(string imageFolder)
-        {
-            try
-            {
-                if (!Directory.Exists(imageFolder))
-                    throw new DirectoryNotFoundException("This directory doesn't exists. Please try again.");
-            }
-            catch (DirectoryNotFoundException ex)
-            {
-                //Console.WriteLine(ex.Message);
-                throw ex;
-            }
-
-            modelPath = ClassLibConfig.ModelPath;
-            ImageFolder = imageFolder;
-            ImageOutputFolder = Path.Combine(ImageFolder, ClassLibConfig.OutputFolder);
-
-            Directory.CreateDirectory(ImageOutputFolder);
-
+        public PictureProcessing()
+        {           
+            model = MakePredictionModel(ClassLibConfig.ModelPath);
             processResultsBuffer = new BlockingCollection<ProcessResult>();
         }
 
-        public async IAsyncEnumerable<ProcessResult> ProcessImagesAsync()
-        {
-            var images = Directory.GetFiles(ImageFolder);
+        public async IAsyncEnumerable<ProcessResult> ProcessImagesAsync(string imageFolder)
+        {            
+            ImageOutputFolder = Path.Combine(imageFolder, ClassLibConfig.OutputFolder);
+            Directory.CreateDirectory(ImageOutputFolder);
+
+            var images = Directory.GetFiles(imageFolder);
             List<Task<ProcessResult>> processors = new List<Task<ProcessResult>>();
             CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
             CancellationToken cancellationToken = cancellationTokenSource.Token;
-            string imageName;
-            Console.WriteLine("Processing...");
             foreach (var imagePath in images)
             {
                 if (!cancellationToken.IsCancellationRequested)
                 {
-                    imageName = imagePath.Substring(imagePath.LastIndexOf(Path.DirectorySeparatorChar) + 1);
-                    Task<ProcessResult> task = ProcessSingleImage(imageName);
+                    Task<ProcessResult> task = ProcessSingleImage(imagePath);
                     processors.Add(task);
                 }
                 else
@@ -74,11 +59,11 @@ namespace ParallelYOLOv4
             await Task.WhenAll(processors);
         }
 
-        public async Task<ProcessResult> ProcessSingleImage(string imageName)
+        public async Task<ProcessResult> ProcessSingleImage(string imagePath)
         {
             return await Task.Factory.StartNew(() =>
             {
-                var labels = ObjectsSegmentation(imageName);
+                var labels = ObjectsSegmentation(imagePath);
                 Dictionary<string, int> uniqueLabels = new Dictionary<string, int>();
 
                 foreach (var label in labels)
@@ -89,6 +74,7 @@ namespace ParallelYOLOv4
                         uniqueLabels.Add(label, 1);
                 }                
 
+                string imageName = imagePath.Substring(imagePath.LastIndexOf(Path.DirectorySeparatorChar) + 1);
                 ProcessResult imageResult;
                 imageResult.imageName = imageName;
                 imageResult.categoriesCounts = uniqueLabels;
@@ -97,11 +83,13 @@ namespace ParallelYOLOv4
             });
         }
 
-        private IReadOnlyList<string> ObjectsSegmentation(string imageName)
+        private IReadOnlyList<string> ObjectsSegmentation(string imagePath)
         {
-            string imagePath = Path.Combine(ImageFolder, imageName);
             List<string> imageObjectCategories = new List<string>();
-            PredictionEngine<YoloV4BitmapData, YoloV4Prediction> predictionEngine = MakePredictionModel();
+            // Create prediction engine
+            MLContext mlContext = new MLContext();
+            PredictionEngine<YoloV4BitmapData, YoloV4Prediction> predictionEngine =
+                mlContext.Model.CreatePredictionEngine<YoloV4BitmapData, YoloV4Prediction>(model);
             using (var bitmap = new Bitmap(Image.FromFile(imagePath)))
             {
                 // predict
@@ -110,6 +98,7 @@ namespace ParallelYOLOv4
 
                 using (var g = Graphics.FromImage(bitmap))
                 {
+                    string imageName = imagePath.Substring(imagePath.LastIndexOf(Path.DirectorySeparatorChar) + 1);
                     foreach (var res in results)
                     {
                         // draw predictions
@@ -134,7 +123,7 @@ namespace ParallelYOLOv4
             return imageObjectCategories;
         }              
 
-        private PredictionEngine<YoloV4BitmapData, YoloV4Prediction> MakePredictionModel()
+        private TransformerChain<OnnxTransformer> MakePredictionModel(string modelPath)
         {
             MLContext mlContext = new MLContext();
 
@@ -163,17 +152,10 @@ namespace ParallelYOLOv4
 
             // Fit on empty list to obtain input data schema
             var model = pipeline.Fit(mlContext.Data.LoadFromEnumerable(new List<YoloV4BitmapData>()));
-
-            // Create prediction engine
-            PredictionEngine<YoloV4BitmapData, YoloV4Prediction> predictionEngine =
-                mlContext.Model.CreatePredictionEngine<YoloV4BitmapData, YoloV4Prediction>(model);
-
-            // save model
-            //mlContext.Model.Save(model, predictionEngine.OutputSchema, Path.ChangeExtension(modelPath, "zip"));
-            return predictionEngine;
+            return model;            
         }
 
-        ~PictureProcessing()
+        public void Dispose()
         {
             if (processResultsBuffer != null)
                 processResultsBuffer.Dispose();
