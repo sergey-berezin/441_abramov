@@ -45,10 +45,9 @@ namespace ParallelYOLOv4
                     processors.Add(task);
                 }
                 else
-                    break;
-                
+                    break;                
             }
-
+            
             ProcessResult currentElem;
             for (int i = 0; i < processors.Count; i++)
             {
@@ -65,23 +64,12 @@ namespace ParallelYOLOv4
         {
             return await Task.Factory.StartNew(() =>
             {
-                var labels = ObjectsSegmentation(imagePath);
-                Dictionary<string, int> uniqueLabels = new Dictionary<string, int>();
+                var results = ObjectsSegmentation(imagePath);
 
                 // if image was handled and there are some labels we should return the results
                 // so there is no cancellationToken verification in this method
-                foreach (var label in labels)
-                {
-                    if (uniqueLabels.ContainsKey(label))
-                        uniqueLabels[label] += 1;
-                    else
-                        uniqueLabels.Add(label, 1);
-                }                
-
                 string imageName = imagePath.Substring(imagePath.LastIndexOf(Path.DirectorySeparatorChar) + 1);
-                ProcessResult imageResult;
-                imageResult.imageName = imageName;
-                imageResult.categoriesCounts = uniqueLabels;
+                ProcessResult imageResult = new ProcessResult(results, imageName);
                 processResultsBuffer.Add(imageResult);
                 return imageResult;                
             });
@@ -98,9 +86,10 @@ namespace ParallelYOLOv4
                 processResultsBuffer.Dispose();
         }
 
-        private IReadOnlyList<string> ObjectsSegmentation(string imagePath)
+        private IReadOnlyList<YoloV4Result> ObjectsSegmentation(string imagePath)
         {
-            List<string> imageObjectCategories = new List<string>();
+            List<YoloV4Result> imageObjects = new List<YoloV4Result>();
+            IReadOnlyList<YoloV4Result> results = null;
             // Check if cancellationToken is cancelled
             if (!cancellationTokenSource.Token.IsCancellationRequested)
             {
@@ -112,13 +101,13 @@ namespace ParallelYOLOv4
                 {
                     // predict
                     var predict = predictionEngine.Predict(new YoloV4BitmapData() { Image = bitmap });
-                    var results = predict.GetResults(ClassLibConfig.ClassesNames, 0.3f, 0.7f);
+                    results = predict.GetResults(ClassLibConfig.ClassesNames, 0.3f, 0.7f);
 
                     using (var g = Graphics.FromImage(bitmap))
                     {
                         string imageName = imagePath.Substring(imagePath.LastIndexOf(Path.DirectorySeparatorChar) + 1);
                         foreach (var res in results)
-                        {
+                        {                            
                             // Stop drawing if cancellationToken is cancelled
                             if (!cancellationTokenSource.Token.IsCancellationRequested)
                             {
@@ -134,8 +123,8 @@ namespace ParallelYOLOv4
                                 }
 
                                 g.DrawString(res.Label + " " + res.Confidence.ToString("0.00"),
-                                                new Font("Arial", 12), Brushes.Blue, new PointF(x1, y1));
-                                imageObjectCategories.Add(res.Label);
+                                                new Font("Arial", 12), Brushes.Blue, new PointF(x1, y1));                                
+                                imageObjects.Add(res);
                             }
                         }
                         bitmap.Save(Path.Combine(ImageOutputFolder,
@@ -143,7 +132,7 @@ namespace ParallelYOLOv4
                     }
                 }
             }
-            return imageObjectCategories;
+            return results;
         }
 
         private TransformerChain<OnnxTransformer> MakePredictionModel(string modelPath)
@@ -177,6 +166,5 @@ namespace ParallelYOLOv4
             var model = pipeline.Fit(mlContext.Data.LoadFromEnumerable(new List<YoloV4BitmapData>()));
             return model;            
         }
-
     }
 }
