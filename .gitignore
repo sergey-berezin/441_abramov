@@ -137,4 +137,8 @@ $RECYCLE.BIN/
 # ONNX model file
 *.onnx
 
+# Pictures
+*.jpg
+*.png
+
 _NCrunch*
