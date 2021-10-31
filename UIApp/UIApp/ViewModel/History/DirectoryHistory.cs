@@ -1,8 +1,5 @@
-﻿using System;
-using System.ComponentModel;
-using System.Collections.Generic;
+﻿using System.ComponentModel;
 using UIApp.ViewModel.FileEntities;
-using UIApp.ViewModel.Collections;
 
 
 namespace UIApp.ViewModel.History
@@ -23,8 +20,6 @@ namespace UIApp.ViewModel.History
         {
             _head = new DirectoryNode(headName);
             CurrentDirectory = _head;
-
-            ProcessedDirectoryImages = new Dictionary<string, ImagesCollection>();
         }
 
         #endregion
@@ -34,8 +29,6 @@ namespace UIApp.ViewModel.History
         public bool CanMoveBack => CurrentDirectory.PrevNode != null;
 
         public bool CanMoveForward => CurrentDirectory.NextNode != null;
-
-        public Dictionary<string, ImagesCollection> ProcessedDirectoryImages { get; }
 
         public DirectoryNode CurrentDirectory
         {
@@ -75,17 +68,6 @@ namespace UIApp.ViewModel.History
         public void MoveForward() => CurrentDirectory = CurrentDirectory.NextNode;
 
         public bool IsOnRoot() => CurrentDirectory.CurrentNode.FullName == _head.CurrentNode.FullName;
-
-        public void UpdateProcessedImagesCollection(string directoryName, ImagesCollection imagesCollection)
-        {
-            if (!ProcessedDirectoryImages.ContainsKey(directoryName))
-            {
-                var imgs = new ImagesCollection();
-                foreach (var pair in imagesCollection)
-                    imgs.Add(new string(pair.Key), new ImageViewModel(pair.Value.FullName) { Bitmap = pair.Value.Bitmap.Clone() });
-                ProcessedDirectoryImages.Add(directoryName, imgs);
-            }
-        }
 
         public void SimulateHistoryChanged() => RaiseHistoryChanged();
 

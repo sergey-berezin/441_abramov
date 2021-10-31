@@ -17,7 +17,6 @@ namespace UIApp.ViewModel
 {
     public class MainViewModel : BaseViewModel
     {
-        private bool _directoryIsHandled = false;
         private ProcessResult _extendedInfo = null;
 
         #region Constructor
@@ -44,6 +43,7 @@ namespace UIApp.ViewModel
 
             History.PropertyChanged += History_PropertiesChanged;
             StartProcess.CanExecuteChanged += CanCancelChanged;
+            StartProcess.PropertyChanged += History_PropertiesChanged;
             ImagesList.PropertyChanged += CanStartChanged;
         }
 
@@ -153,32 +153,23 @@ namespace UIApp.ViewModel
 
         private async void Start(object parameter)
         {
-            //Dispatcher?.Invoke(() => { History.SimulateHistoryChanged(); });
-
             PictureProcessing pictureProcessing = new PictureProcessing();
             string imagesPath = History.CurrentDirectory.CurrentNode.FullName;
             await foreach (var processResult in pictureProcessing.ProcessImagesAsync(imagesPath))
             {
                 Dispatcher?.Invoke(() =>
                 {
-                    ImagesList[processResult.ImageName].SourceChanged(processResult.Bitmap);
-                    /*if (ImagesList.ContainsKey(processResult.ImageName))
-                        ImagesList[processResult.ImageName].SourceChanged(processResult.Bitmap);
-                    else
-                        History.ProcessedDirectoryImages[imagesPath][processResult.ImageName].SourceChanged(processResult.Bitmap);*/
+                    ImagesList[processResult.ImageName].SourceChanged(processResult.Bitmap);                    
                     if (StartProcess.IsCanceled)
                         pictureProcessing.Cancel();
 
                     RecognitionResults[processResult.ImageName] = processResult;
-
-                    _directoryIsHandled = true;
                 });
             }
 
             Dispatcher?.Invoke(() =>
             { 
                 SelectUniqueCategories(); 
-                //History.SimulateHistoryChanged(); 
             });
         }
 
@@ -259,8 +250,6 @@ namespace UIApp.ViewModel
 
         private void OpenDirectory(DirectoryViewModel directory)
         {
-            //SaveHandledImages(); // save ImagesList to History if images in prev directory was handled
-
             EntitiesList.Clear();
             ImagesList.Clear();
             RecognitionResults.Clear();
@@ -276,11 +265,7 @@ namespace UIApp.ViewModel
                 if (extensions.Contains(fileInfo.Extension))
                 {
                     var img = new ImageViewModel(fileInfo);
-                    if (!History.ProcessedDirectoryImages.ContainsKey(directory.FullName))
-                        ImagesList.Add(fileInfo.Name, img);
-                    else
-                        ImagesList.Add(fileInfo.Name,
-                            History.ProcessedDirectoryImages[directory.FullName][fileInfo.Name]);
+                    ImagesList.Add(fileInfo.Name, img);
                     OnPropertyChanged(nameof(ImagesList));
                     EntitiesList.Add(img);
                 }
@@ -291,24 +276,11 @@ namespace UIApp.ViewModel
 
         private void GetLogicalDrives()
         {
-            //SaveHandledImages();
-
             EntitiesList.Clear();
             ImagesList.Clear();
             foreach (var logicalDrive in Directory.GetLogicalDrives())
                 EntitiesList.Add(new DirectoryViewModel(new DirectoryInfo(logicalDrive)));
         }
-
-        private void SaveHandledImages()
-        {            
-            if (_directoryIsHandled)
-            {
-                var imgFullName = ImagesList[0].FullName;
-                var directoryName = imgFullName.Substring(0, imgFullName.LastIndexOf(Path.DirectorySeparatorChar));
-                History.UpdateProcessedImagesCollection(directoryName, ImagesList);
-            }
-            _directoryIsHandled = false;
-        }        
 
         private void SelectUniqueCategories()
         {

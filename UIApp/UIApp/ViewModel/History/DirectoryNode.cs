@@ -1,5 +1,4 @@
-﻿using System.IO;
-using UIApp.ViewModel.FileEntities;
+﻿using UIApp.ViewModel.FileEntities;
 
 
 namespace UIApp.ViewModel.History
