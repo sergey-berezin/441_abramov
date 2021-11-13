@@ -192,10 +192,10 @@ namespace UIApp.ViewModel
 
         private void ShowExtraInfo(object parameter)
         {
-            if (RecognitionResults.Count > 0)
+            var image = (KeyValuePair<string, ImageViewModel>)parameter;
+            var imageName = image.Key;
+            if (RecognitionResults.Count > 0 && RecognitionResults.ContainsKey(imageName))
             {                
-                var image = (KeyValuePair<string, ImageViewModel>)parameter;
-                var imageName = image.Key;
                 ExtendedInfo = RecognitionResults[imageName];
             }
         }
