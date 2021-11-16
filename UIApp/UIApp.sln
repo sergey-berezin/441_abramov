@@ -7,6 +7,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UIApp", "UIApp\UIApp.csproj
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ParallelYOLOv4", "ParallelYOLOv4\ParallelYOLOv4.csproj", "{515D748C-2EC1-4511-B888-8BC1B79F2AFD}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataStorage", "DataStorage\DataStorage.csproj", "{11713DAB-EBE3-4BEE-980F-B5194B4B783A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Entities", "Entities\Entities.csproj", "{3C4B9295-48E9-43F1-BC19-5920B392826B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		{515D748C-2EC1-4511-B888-8BC1B79F2AFD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{515D748C-2EC1-4511-B888-8BC1B79F2AFD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{515D748C-2EC1-4511-B888-8BC1B79F2AFD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{11713DAB-EBE3-4BEE-980F-B5194B4B783A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{11713DAB-EBE3-4BEE-980F-B5194B4B783A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{11713DAB-EBE3-4BEE-980F-B5194B4B783A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{11713DAB-EBE3-4BEE-980F-B5194B4B783A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3C4B9295-48E9-43F1-BC19-5920B392826B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3C4B9295-48E9-43F1-BC19-5920B392826B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C4B9295-48E9-43F1-BC19-5920B392826B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3C4B9295-48E9-43F1-BC19-5920B392826B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
