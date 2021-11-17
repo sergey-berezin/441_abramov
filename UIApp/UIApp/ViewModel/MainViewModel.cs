@@ -42,7 +42,7 @@ namespace UIApp.ViewModel
             CancelProcess = new AsyncCommand(Cancel, CanCancel);
             ShowExtendedInfo = new AsyncCommand(ShowExtraInfo, CanShowExtraInfo);
             SelectCategory = new AsyncCommand(SelectObjectsCategory);
-            OpenStorageWindow = new AsyncCommand(LoadStorage);
+            OpenStorageWindow = new AsyncCommand(LoadStorage);//, CanLoadStorage);
 
             History.PropertyChanged += History_PropertiesChanged;
             StartProcess.CanExecuteChanged += CanCancelChanged;
@@ -80,7 +80,7 @@ namespace UIApp.ViewModel
 
         public UniqueCategoriesObservable UniqueCategories { get; set; } // категории объектов со всех ихображений
 
-        public UniqueCategoriesObservable SpecifiedCategories { get; set; } // выбранные категории объектов
+        public UniqueCategoriesObservable SpecifiedCategories { get; set; } // выбранные категории объектов       
 
         #endregion
 
@@ -230,7 +230,11 @@ namespace UIApp.ViewModel
         #region OpenStorageWindow Methods
 
         private void LoadStorage(object parameter) => 
-            Dispatcher?.Invoke(() => { new StorageWindow().Show(); });
+            Dispatcher?.Invoke(() => 
+            {
+                new StorageWindow().Show();
+                
+            });
         
         #endregion
 
@@ -257,7 +261,7 @@ namespace UIApp.ViewModel
             }
             return result;
         }
-        
+
         #endregion
 
         #region Private Methods

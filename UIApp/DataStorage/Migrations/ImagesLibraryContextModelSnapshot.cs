@@ -16,7 +16,7 @@ namespace DataStorage.Migrations
             modelBuilder
                 .HasAnnotation("ProductVersion", "5.0.0");
 
-            modelBuilder.Entity("DataStorage.ImageInfo", b =>
+            modelBuilder.Entity("Entities.ImageInfo", b =>
                 {
                     b.Property<int>("ImageInfoId")
                         .ValueGeneratedOnAdd()
@@ -25,20 +25,15 @@ namespace DataStorage.Migrations
                     b.Property<string>("ImageHash")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("ImageInfoDetailsId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("ImageName")
                         .HasColumnType("TEXT");
 
                     b.HasKey("ImageInfoId");
 
-                    b.HasIndex("ImageInfoDetailsId");
-
                     b.ToTable("ImagesInfo");
                 });
 
-            modelBuilder.Entity("DataStorage.ImageInfoDetails", b =>
+            modelBuilder.Entity("Entities.ImageInfoDetails", b =>
                 {
                     b.Property<int>("ImageInfoDetailsId")
                         .ValueGeneratedOnAdd()
@@ -47,12 +42,18 @@ namespace DataStorage.Migrations
                     b.Property<byte[]>("Image")
                         .HasColumnType("BLOB");
 
+                    b.Property<int>("ImageInfoId")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("ImageInfoDetailsId");
+
+                    b.HasIndex("ImageInfoId")
+                        .IsUnique();
 
                     b.ToTable("ImagesInfoDetails");
                 });
 
-            modelBuilder.Entity("DataStorage.RecognizedObject", b =>
+            modelBuilder.Entity("Entities.RecognizedObject", b =>
                 {
                     b.Property<int>("ObjectId")
                         .ValueGeneratedOnAdd()
@@ -64,7 +65,7 @@ namespace DataStorage.Migrations
                     b.Property<double>("Confidence")
                         .HasColumnType("REAL");
 
-                    b.Property<int?>("ImageInfoId")
+                    b.Property<int>("ImageInfoId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("ObjectId");
@@ -74,24 +75,28 @@ namespace DataStorage.Migrations
                     b.ToTable("RecognizedObjects");
                 });
 
-            modelBuilder.Entity("DataStorage.ImageInfo", b =>
+            modelBuilder.Entity("Entities.ImageInfoDetails", b =>
                 {
-                    b.HasOne("DataStorage.ImageInfoDetails", "ImageInfoDetails")
-                        .WithMany()
-                        .HasForeignKey("ImageInfoDetailsId");
-
-                    b.Navigation("ImageInfoDetails");
+                    b.HasOne("Entities.ImageInfo", null)
+                        .WithOne("ImageInfoDetails")
+                        .HasForeignKey("Entities.ImageInfoDetails", "ImageInfoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
-            modelBuilder.Entity("DataStorage.RecognizedObject", b =>
+            modelBuilder.Entity("Entities.RecognizedObject", b =>
                 {
-                    b.HasOne("DataStorage.ImageInfo", null)
+                    b.HasOne("Entities.ImageInfo", null)
                         .WithMany("RecognizedObjects")
-                        .HasForeignKey("ImageInfoId");
+                        .HasForeignKey("ImageInfoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
-            modelBuilder.Entity("DataStorage.ImageInfo", b =>
+            modelBuilder.Entity("Entities.ImageInfo", b =>
                 {
+                    b.Navigation("ImageInfoDetails");
+
                     b.Navigation("RecognizedObjects");
                 });
 #pragma warning restore 612, 618

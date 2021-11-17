@@ -10,16 +10,23 @@ namespace UIApp
     public partial class MainWindow : Window
     {  
 
-        public MainViewModel mainViewModel { get; set; }
 
         public MainWindow()
         {
-            mainViewModel = new MainViewModel();
+            MainViewModel = new MainViewModel();
             InitializeComponent();
-            DataContext = mainViewModel;
+            DataContext = MainViewModel;
+            Loaded += MainWindow_Loaded;
+        }
+        
+        public MainViewModel MainViewModel { get; set; }
+
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            new StorageWindow().Show(); // show DataStorage content after MainWindow loaded
         }
 
         private void SelectOnlySpecified(object sender, FilterEventArgs args) => 
-            args.Accepted = mainViewModel.SelectSpecified(args.Item);
+            args.Accepted = MainViewModel.SelectSpecified(args.Item);
     }
 }

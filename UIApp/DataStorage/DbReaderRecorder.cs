@@ -24,8 +24,6 @@ namespace DataStorage
             {
                 if (!IsDuplicateExist(db, imgByteArray, imgHashCodeStr)) // check if db contains a similar image
                 {
-                    // make ImageInfoDetails record
-                    db.Add(new ImageInfoDetails() { Image = imgByteArray });
 
                     // make RecognizedObjects record
                     List<RecognizedObject> recognizedObjects = new List<RecognizedObject>();
@@ -91,10 +89,12 @@ namespace DataStorage
         {
             using (var db = new ImagesLibraryContext())
             {
+                db.Attach(imageInfo);
+                db.Entry(imageInfo).Collection(imgInfo => imgInfo.RecognizedObjects).Load();
+                db.Entry(imageInfo).Reference(imgInfo => imgInfo.ImageInfoDetails).Load();
                 db.Remove(imageInfo);
                 db.SaveChanges();
             }
-
         }
 
         #endregion

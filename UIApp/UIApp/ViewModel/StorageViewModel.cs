@@ -19,25 +19,26 @@ namespace UIApp.ViewModel
             Dispatcher = Dispatcher.CurrentDispatcher;
             ImagesInfo = new ObservableCollection<ImageInfo>();
             RecognizedObjects = new ObservableCollection<RecognizedObject>();
-            ImageContent = new ImageViewModel();
+            ImageContent = new ObservableCollection<ImageViewModel>();
 
-            ShowImageDetails = new AsyncCommand(ShowDetails);
+            ShowImageDetails = new AsyncCommand(ShowDetails, CanShowDetails);
             RemoveItem = new AsyncCommand(RemoveItemData, CanRemoveItemData);
+            UpdateContentView = new AsyncCommand(UpdateContent);
 
-            ShowImageDetails.PropertyChanged += CanRemoveItemChanged;
+            ShowImageDetails.CanExecuteChanged += RemoveItem_CanExecuteChanged;
 
             ShowNamesList();
-        }
+        }        
 
         #region Properties
-        
+
         public Dispatcher Dispatcher { get; set; }
 
         public ObservableCollection<ImageInfo> ImagesInfo { get; set; }
 
         public ObservableCollection<RecognizedObject> RecognizedObjects { get; set; }
 
-        public ImageViewModel ImageContent { get; set; }
+        public ObservableCollection<ImageViewModel> ImageContent { get; set; }
 
         #endregion
 
@@ -46,6 +47,8 @@ namespace UIApp.ViewModel
         public AsyncCommand ShowImageDetails { get; }
 
         public AsyncCommand RemoveItem { get; }
+
+        public AsyncCommand UpdateContentView { get; }
 
         #endregion
 
@@ -56,11 +59,14 @@ namespace UIApp.ViewModel
         private void ShowDetails(object parameter) =>
             Dispatcher?.Invoke(() =>
             {
-                ImageContent.SourceChanged(DbReaderRecorder.SelectImageContent((ImageInfo)parameter));
-                RecognizedObjects.Clear();
+                ClearItemInfoView();
+                ImageContent.Add(new ImageViewModel());
+                ImageContent[0].SourceChanged(DbReaderRecorder.SelectImageContent((ImageInfo)parameter));
                 foreach (var obj in DbReaderRecorder.SelectRecognizedObjects((ImageInfo)parameter))
                     RecognizedObjects.Add(obj);
             });
+
+        private bool CanShowDetails(object parameter) => parameter != null;
 
         #endregion
 
@@ -69,26 +75,38 @@ namespace UIApp.ViewModel
         private void RemoveItemData(object parameter) =>
             Dispatcher?.Invoke(() =>
             {
-                /*RecognizedObjects.Clear();
-                ImageContent = null;
+                DbReaderRecorder.RemoveItem((ImageInfo)parameter);
+                ClearItemInfoView();
                 ImagesInfo.Remove((ImageInfo)parameter);
-                DbReaderRecorder.RemoveItem((ImageInfo)parameter);*/
             });
 
         private bool CanRemoveItemData(object parameter) => parameter != null;
 
         #endregion
 
+        #region UpdateContentView Handlers
+
+        private void UpdateContent(object parameter) =>
+            Dispatcher?.Invoke(() => { ShowNamesList(); });
+
         #endregion
 
-        public void ShowNamesList()
+        #endregion
+
+        private void ClearItemInfoView()
+        {
+            RecognizedObjects.Clear();
+            ImageContent.Clear();
+        }
+
+        private void ShowNamesList()
         {
             ImagesInfo.Clear();
             foreach (var imageInfo in DbReaderRecorder.SelectImagesInfo())
                 ImagesInfo.Add(imageInfo);
         }
 
-        private void CanRemoveItemChanged(object sender, PropertyChangedEventArgs e) =>
+        private void RemoveItem_CanExecuteChanged(object sender, EventArgs e) =>
             Dispatcher?.Invoke(() => { RemoveItem?.RaiseCanExecuteChanged(); });
     }
 }
