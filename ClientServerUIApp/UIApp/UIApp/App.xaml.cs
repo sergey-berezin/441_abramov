@@ -13,6 +13,7 @@ namespace UIApp
     /// </summary>
     public partial class App : Application
     {
-        public static string Uri { get; set; } = "http://localhost:5000/api/datastorage";
+        public static string Uri { get; } = "http://localhost:5000/api/datastorage";
     }
+
 }

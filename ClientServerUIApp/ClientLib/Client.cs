@@ -41,12 +41,21 @@ namespace ClientLib
 
         public static List<WebImageInfo> Get(string url)
         {
-            string answer;            
+            string answer = null;
+            List<WebImageInfo> queryResult;
             using (HttpClient client = new HttpClient())
             {
-                answer = client.GetStringAsync(url).Result;
+                try
+                {
+                    answer = client.GetStringAsync(url).Result;
+                    queryResult = JsonConvert.DeserializeObject<List<WebImageInfo>>(answer);
+                }
+                catch (Exception)
+                {
+                    queryResult = new List<WebImageInfo>();
+                }
             }
-            return JsonConvert.DeserializeObject<List<WebImageInfo>>(answer);
+            return queryResult;
         }
 
         public static KeyValuePair<byte[], List<WebRecognizedObject>>? Get(string url, int imgInfoId)
@@ -69,7 +78,7 @@ namespace ClientLib
                 return null;
         }
     
-        public static int? Delete(string url, int index)
+        public static int Delete(string url, int index)
         {
             string answer;
             using (var client = new HttpClient())
@@ -80,7 +89,7 @@ namespace ClientLib
                 }
                 catch (Exception)
                 {
-                    return null;
+                    return -1;
                 }
             }
             return Convert.ToInt32(answer);
@@ -108,14 +117,28 @@ namespace ClientLib
                             new KeyValuePair<uint, KeyValuePair<string, byte[]>>(ClientID, image));
                     var content = new StringContent(serializedImages);
                     content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-                    answers.Add(client.PostAsync(url, content));
+                    Task<HttpResponseMessage>? clientTask = null;
+                    try
+                    {
+                        clientTask = client.PostAsync(url, content);
+                        answers.Add(clientTask);
+                    }
+                    catch (Exception)
+                    {
+
+                    }
+                    if (clientTask == null)
+                        break;
                 }
                 while (answers.Count > 0 && !Cancelled)
                 {
                     int taskId = Task.WaitAny(answers.ToArray());
-                    HttpResponseMessage response = answers[taskId].Result;
-                    string content = response.Content.ReadAsStringAsync().Result;
-                    yield return JsonConvert.DeserializeObject<WebProcessResult>(content);
+                    if (answers[taskId].Status != TaskStatus.Faulted)
+                    {
+                        HttpResponseMessage response = answers[taskId].Result;
+                        string content = response.Content.ReadAsStringAsync().Result;
+                        yield return JsonConvert.DeserializeObject<WebProcessResult>(content);
+                    }
                     answers.RemoveAt(taskId);
                 }
                 Cancel(url);

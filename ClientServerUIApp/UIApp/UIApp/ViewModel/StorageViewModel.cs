@@ -1,9 +1,8 @@
 ﻿using System;
-using System.IO;
-using System.Drawing;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Windows.Threading;
+using System.Threading.Tasks;
 using UIApp.ViewModel.Commands;
 using UIApp.ViewModel.FileEntities;
 using ClientLib;
@@ -26,7 +25,7 @@ namespace UIApp.ViewModel
 
             ShowImageDetails.CanExecuteChanged += RemoveItem_CanExecuteChanged;
 
-            ShowNamesList();
+            UpdateContent();
         }
 
         #region Properties
@@ -57,11 +56,12 @@ namespace UIApp.ViewModel
         {
             int imageId = ((WebImageInfo)parameter).ImageInfoId;
             KeyValuePair<byte[], List<WebRecognizedObject>>? imageDetails = Client.Get(App.Uri, imageId);
+            var bitmap = new System.Drawing.Bitmap(new System.IO.MemoryStream(imageDetails.Value.Key));
             Dispatcher?.Invoke(() =>
             {
                 ClearItemInfoView();
                 ImageContent.Add(new ImageViewModel());
-                ImageContent[0].SourceChanged(new Bitmap(new MemoryStream(imageDetails.Value.Key)));
+                ImageContent[0].SourceChanged(bitmap);
                 foreach (var obj in imageDetails.Value.Value)
                     RecognizedObjects.Add(obj);
             });
@@ -75,11 +75,12 @@ namespace UIApp.ViewModel
 
         private void RemoveItemData(object parameter)
         {
-            Client.Delete(App.Uri, ((WebImageInfo)parameter).ImageInfoId);
+            var imgInfo = (WebImageInfo)parameter;
+            Client.Delete(App.Uri, imgInfo.ImageInfoId);
             Dispatcher?.Invoke(() =>
             {
                 ClearItemInfoView();
-                ImagesInfo.Remove((WebImageInfo)parameter);
+                ImagesInfo.Remove(imgInfo);
             });
         }
 
@@ -91,7 +92,14 @@ namespace UIApp.ViewModel
 
         #region PublicMethods
 
-        public void UpdateContent() => Dispatcher?.Invoke(() => { ShowNamesList(); });
+        public async Task UpdateContent()
+        {
+            await Task.Factory.StartNew(() =>
+            {
+                var result = Client.Get(App.Uri);
+                Dispatcher?.Invoke(() => { ShowNamesList(result); });
+            });
+        }
 
         #endregion
 
@@ -103,10 +111,10 @@ namespace UIApp.ViewModel
             ImageContent.Clear();
         }
 
-        private void ShowNamesList()
+        private void ShowNamesList(List<WebImageInfo> result)
         {
             ImagesInfo.Clear();
-            foreach (var imageInfo in Client.Get(App.Uri))
+            foreach (var imageInfo in result)
                 ImagesInfo.Add(imageInfo);
         }
 

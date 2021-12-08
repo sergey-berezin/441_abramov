@@ -158,24 +158,30 @@ namespace UIApp.ViewModel
             string imagesPath = History.CurrentDirectory.CurrentNode.FullName;
             using (var client = new Client())
             {
-                foreach (var processResult in client.PostAsync(App.Uri, imagesPath))
+                var query = client.PostAsync(App.Uri, imagesPath);
+                foreach (var processResult in query)
                 {
+                    var bitmap = new Bitmap(new MemoryStream(processResult.ByteBitmap));
                     Dispatcher?.Invoke(() =>
                     {
-                        var bitmap = new Bitmap(new MemoryStream(processResult.ByteBitmap));
-                        ImagesList[processResult.ImageName].SourceChanged(bitmap);
-                        
-                        if (StartProcess.IsCanceled)
-                            client.Cancel(App.Uri);
-
+                        ImagesList[processResult.ImageName].SourceChanged(bitmap);                    
                         RecognitionResults[processResult.ImageName] = processResult;
                     });
+                    if (StartProcess.IsCanceled)
+                        client.Cancel(App.Uri);
                 }
             }
 
             Dispatcher?.Invoke(() =>
-            { 
-                SelectUniqueCategories(); 
+            {
+                if (RecognitionResults.Count == 0)
+                {
+                    System.Windows.MessageBox.Show("Service is not available.");
+                }
+                else
+                {
+                    SelectUniqueCategories();
+                }
             });
         }
 
@@ -201,7 +207,7 @@ namespace UIApp.ViewModel
             var image = (KeyValuePair<string, ImageViewModel>)parameter;
             var imageName = image.Key;
             if (RecognitionResults.Count > 0 && RecognitionResults.ContainsKey(imageName))
-            {
+            {                
                 ExtendedInfo = RecognitionResults[imageName];
             }
         }
@@ -292,8 +298,8 @@ namespace UIApp.ViewModel
         {
             foreach (var processResult in RecognitionResults.Values)
             {
-                foreach (var category in processResult.RecognitionObjects?.Select(obj => obj.Key))
-                    UniqueCategories.Add(category);
+                foreach (var category in processResult.RecognitionObjects)
+                    UniqueCategories.Add(category.Key);
             }
         }
 
