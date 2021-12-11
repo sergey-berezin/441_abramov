@@ -9,8 +9,6 @@ namespace UIApp
     /// </summary>
     public partial class MainWindow : Window
     {  
-
-
         public MainWindow()
         {
             MainViewModel = new MainViewModel();
