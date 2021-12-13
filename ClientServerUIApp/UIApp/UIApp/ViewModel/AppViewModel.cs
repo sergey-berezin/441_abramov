@@ -156,20 +156,18 @@ namespace UIApp.ViewModel
         private void Start(object parameter)
         {
             string imagesPath = History.CurrentDirectory.CurrentNode.FullName;
-            using (var client = new Client())
+            var client = new Client();
+            var query = client.PostAsync(App.Uri, imagesPath);
+            foreach (var processResult in query)
             {
-                var query = client.PostAsync(App.Uri, imagesPath);
-                foreach (var processResult in query)
+                var bitmap = new Bitmap(new MemoryStream(processResult.ByteBitmap));
+                Dispatcher?.Invoke(() =>
                 {
-                    var bitmap = new Bitmap(new MemoryStream(processResult.ByteBitmap));
-                    Dispatcher?.Invoke(() =>
-                    {
-                        ImagesList[processResult.ImageName].SourceChanged(bitmap);                    
-                        RecognitionResults[processResult.ImageName] = processResult;
-                    });
-                    if (StartProcess.IsCanceled)
-                        client.Cancel(App.Uri);
-                }
+                    ImagesList[processResult.ImageName].SourceChanged(bitmap);                    
+                    RecognitionResults[processResult.ImageName] = processResult;
+                });
+                if (StartProcess.IsCanceled)
+                    client.Cancel();
             }
 
             Dispatcher?.Invoke(() =>
@@ -273,7 +271,7 @@ namespace UIApp.ViewModel
             foreach (var fileName in Directory.GetFiles(directory.FullName))
             {
                 var fileInfo = new FileInfo(fileName);
-                var extensions = new ObservableCollection<string>() { ".png", ".jpg" };                
+                var extensions = new ObservableCollection<string>() { ".png", ".jpg" };
                 if (extensions.Contains(fileInfo.Extension))
                 {
                     var img = new ImageViewModel(fileInfo);

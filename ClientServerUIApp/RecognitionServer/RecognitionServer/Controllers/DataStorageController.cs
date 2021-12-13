@@ -16,10 +16,6 @@ namespace RecognitionServer.Controllers
     [ApiController]
     public class DataStorageController : Controller
     {
-
-        private PictureProcessing _pictureProcessing = new PictureProcessing();
-        private Dictionary<uint, PictureProcessing> processors = new Dictionary<uint, PictureProcessing>();
-
         [HttpGet]
         public ActionResult<List<WebImageInfo>> GetImagesInfo()
         {
@@ -47,27 +43,15 @@ namespace RecognitionServer.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<WebProcessResult>> StartRecognition(KeyValuePair<uint, KeyValuePair<string, byte[]>> content)
+        public async Task<ActionResult<WebProcessResult>> StartRecognition(KeyValuePair<string, byte[]> image)
         {
-            var threadID = content.Key;
-            var image = content.Value;
             string imageName = image.Key.Substring(image.Key.LastIndexOf(Path.DirectorySeparatorChar) + 1);
-            //var result = await _pictureProcessing.ProcessSingleImage(imageName, new Bitmap(new MemoryStream(image.Value)));
-            if (!processors.ContainsKey(threadID))
-                processors[threadID] = new PictureProcessing();
-            var result = await processors[threadID].ProcessSingleImage(imageName, new Bitmap(new MemoryStream(image.Value)));
+            PictureProcessing pictureProcessing = new PictureProcessing();
+            var result = await pictureProcessing.ProcessSingleImage(imageName, new Bitmap(new MemoryStream(image.Value)));
             if (result != null)
                 DbReaderRecorder.RecordInfo(result);
             return result?.ToWeb();
             
-        }
-
-        [HttpPut]
-        public ActionResult<bool> Cancel(uint threadID)
-        {
-            processors[threadID].Cancel();
-            processors.Remove(threadID);
-            return true;
         }
 
         [HttpDelete("{imageInfoId:int}")]

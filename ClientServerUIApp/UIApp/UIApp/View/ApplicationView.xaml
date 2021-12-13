@@ -111,10 +111,10 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Grid>
-                                    <Border ToolTip="{Binding ElementName=FileEntity, 
+                                    <Border ToolTip="{Binding ElementName=FileEntity,
                                                               Path=Text}">
                                         <TextBlock x:Name="FileEntity" 
-                                                   Text="{Binding Path=Name}" 
+                                                   Text="{Binding Path=Name}"
                                                    FontSize="14"/>
                                     </Border>
                                 </Grid>
@@ -151,7 +151,6 @@
                             FontSize="14"
                             ToolTip="Cancel Recognition"
                             Command="{Binding CancelProcess}"/>
-
                 </Grid>
 
             </Grid>

@@ -10,28 +10,19 @@ using WebClassLib;
 
 namespace ClientLib
 {
-    public class Client : IDisposable
+    public class Client
     {
-        #region Fields
-
-        private static uint _clientsCount = 0;
-
-        #endregion
 
         #region Constructor
 
-        public Client()
+        public Client() 
         {
             Cancelled = false;
-            ClientID = _clientsCount;
-            _clientsCount++;
         }
 
         #endregion
 
         #region Properties
-
-        public uint ClientID { get; }
 
         public bool Cancelled { get; private set; }
 
@@ -41,7 +32,7 @@ namespace ClientLib
 
         public static List<WebImageInfo> Get(string url)
         {
-            string answer = null;
+            string answer;
             List<WebImageInfo> queryResult;
             using (HttpClient client = new HttpClient())
             {
@@ -113,8 +104,7 @@ namespace ClientLib
                     bitmap = new Bitmap(Image.FromFile(imagePath));
                     byteArray = (byte[])new ImageConverter().ConvertTo(bitmap, typeof(byte[]));
                     image = new KeyValuePair<string, byte[]>(imagePath, byteArray);
-                    var serializedImages = JsonConvert.SerializeObject(
-                            new KeyValuePair<uint, KeyValuePair<string, byte[]>>(ClientID, image));
+                    var serializedImages = JsonConvert.SerializeObject(image);
                     var content = new StringContent(serializedImages);
                     content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                     Task<HttpResponseMessage>? clientTask = null;
@@ -141,30 +131,15 @@ namespace ClientLib
                     }
                     answers.RemoveAt(taskId);
                 }
-                Cancel(url);
             }
         }
 
-        public void Cancel(string url)
+        public void Cancel()
         {
             if (!Cancelled)
             {
-                using (var client = new HttpClient())
-                {
-                    try
-                    {
-                        var content = new StringContent(JsonConvert.SerializeObject(ClientID));
-                        client.PutAsync(url, content);
-                    }
-                    catch (Exception) { }
-                }
                 Cancelled = true;
             }
-        }
-
-        public void Dispose()
-        {
-            _clientsCount--;
         }
 
         #endregion
