@@ -36,7 +36,6 @@
         </Grid.RowDefinitions>
 
         <Grid x:Name="NavagationLayer" Grid.Row="0">
-
             <Grid.RowDefinitions>
                 <RowDefinition Height="25"/>
                 <RowDefinition Height="50"/>

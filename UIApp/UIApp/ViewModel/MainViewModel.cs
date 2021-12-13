@@ -11,9 +11,7 @@ using UIApp.ViewModel.History;
 using UIApp.ViewModel.FileEntities;
 using UIApp.ViewModel.Collections;
 using ParallelYOLOv4;
-
 using DataStorage;
-
 
 namespace UIApp.ViewModel
 {
@@ -75,7 +73,6 @@ namespace UIApp.ViewModel
                     OnPropertyChanged(nameof(ExtendedInfo));
                 }
             }
-
         }
 
         public UniqueCategoriesObservable UniqueCategories { get; set; } // категории объектов со всех ихображений
@@ -261,7 +258,7 @@ namespace UIApp.ViewModel
             }
             return result;
         }
-
+        
         #endregion
 
         #region Private Methods
