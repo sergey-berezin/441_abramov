@@ -258,7 +258,7 @@ namespace UIApp.ViewModel
             }
             return result;
         }
-
+        
         #endregion
 
         #region Private Methods

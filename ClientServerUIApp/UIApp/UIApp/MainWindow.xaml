@@ -1,0 +1,62 @@
+﻿<Window x:Class="UIApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:UIApp" 
+        xmlns:viewmodel="clr-namespace:UIApp.ViewModel" 
+        d:DataContext="{d:DesignInstance Type=viewmodel:AppViewModel}"
+        mc:Ignorable="d"
+        Title="PictureRecognition" 
+        Height="700" 
+        Width="1200"
+        MinHeight="700"
+        MinWidth="1200"
+        Name="mainWindow">
+
+    <Grid x:Name="MainGrid">
+        
+        <Grid.RowDefinitions>
+            <!-- Navigation panel -->
+            <RowDefinition Height="35"/>
+            <!-- Content -->
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Grid x:Name="MenuLayer" Grid.Row="0" Margin="5,5,0,0">
+            <Menu x:Name="MainMenu" Background="White" Margin="5,0,0,0" Height="25">
+
+                <Menu.ItemTemplate>
+                    <DataTemplate>
+                        
+                    </DataTemplate>
+                </Menu.ItemTemplate>
+                
+                <MenuItem Header="Storage" 
+                          x:Name="StorageMI"
+                          Width="auto"
+                          Height="25"
+                          HorizontalAlignment="Center" 
+                          VerticalAlignment="Center" 
+                          FontSize="12" 
+                          BorderThickness="0.5" 
+                          BorderBrush="Black"
+                          Click="MenuItem_Storage_Click"/>
+                <MenuItem Header="Recognition"
+                          x:Name="RecognitionMI"
+                          Width="auto"
+                          Height="25"
+                          HorizontalAlignment="Center" 
+                          VerticalAlignment="Center" 
+                          FontSize="12" 
+                          BorderThickness="0.5" 
+                          BorderBrush="Black"
+                          Click="MenuItem_Recognition_Click"/>
+            </Menu>
+        </Grid>
+
+        <ContentPresenter Grid.Row="1" x:Name="OutputView" DataContext="{Binding}"/>
+
+    </Grid>
+</Window>
