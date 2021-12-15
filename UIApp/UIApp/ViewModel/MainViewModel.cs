@@ -11,7 +11,7 @@ using UIApp.ViewModel.History;
 using UIApp.ViewModel.FileEntities;
 using UIApp.ViewModel.Collections;
 using ParallelYOLOv4;
-
+using DataStorage;
 
 namespace UIApp.ViewModel
 {
@@ -40,6 +40,7 @@ namespace UIApp.ViewModel
             CancelProcess = new AsyncCommand(Cancel, CanCancel);
             ShowExtendedInfo = new AsyncCommand(ShowExtraInfo, CanShowExtraInfo);
             SelectCategory = new AsyncCommand(SelectObjectsCategory);
+            OpenStorageWindow = new AsyncCommand(LoadStorage);//, CanLoadStorage);
 
             History.PropertyChanged += History_PropertiesChanged;
             StartProcess.CanExecuteChanged += CanCancelChanged;
@@ -56,9 +57,9 @@ namespace UIApp.ViewModel
         public Dispatcher Dispatcher { get; set; }
 
         public DirectoryHistory History { get; }
-        
-        public ImagesCollection ImagesList { get; set; }   
-        
+
+        public ImagesCollection ImagesList { get; set; }
+
         public Dictionary<string, ProcessResult> RecognitionResults { get; set; }
 
         public ProcessResult ExtendedInfo
@@ -72,12 +73,11 @@ namespace UIApp.ViewModel
                     OnPropertyChanged(nameof(ExtendedInfo));
                 }
             }
-                
         }
 
         public UniqueCategoriesObservable UniqueCategories { get; set; } // категории объектов со всех ихображений
 
-        public UniqueCategoriesObservable SpecifiedCategories { get; set; } // выбранные категории объектов
+        public UniqueCategoriesObservable SpecifiedCategories { get; set; } // выбранные категории объектов       
 
         #endregion
 
@@ -96,6 +96,8 @@ namespace UIApp.ViewModel
         public AsyncCommand ShowExtendedInfo { get; }
 
         public AsyncCommand SelectCategory { get; }
+
+        public AsyncCommand OpenStorageWindow { get; }
 
         #endregion
 
@@ -165,6 +167,8 @@ namespace UIApp.ViewModel
 
                     RecognitionResults[processResult.ImageName] = processResult;
                 });
+
+                DbReaderRecorder.RecordInfo(processResult);                
             }
 
             Dispatcher?.Invoke(() =>
@@ -192,10 +196,10 @@ namespace UIApp.ViewModel
 
         private void ShowExtraInfo(object parameter)
         {
-            if (RecognitionResults.Count > 0)
+            var image = (KeyValuePair<string, ImageViewModel>)parameter;
+            var imageName = image.Key;
+            if (RecognitionResults.Count > 0 && RecognitionResults.ContainsKey(imageName))
             {                
-                var image = (KeyValuePair<string, ImageViewModel>)parameter;
-                var imageName = image.Key;
                 ExtendedInfo = RecognitionResults[imageName];
             }
         }
@@ -218,6 +222,17 @@ namespace UIApp.ViewModel
                 ImagesList.SimulateCollectionChanged(); // лайфхак для обновления представления коллекции :)
             });
 
+        #endregion
+
+        #region OpenStorageWindow Methods
+
+        private void LoadStorage(object parameter) => 
+            Dispatcher?.Invoke(() => 
+            {
+                new StorageWindow().Show();
+                
+            });
+        
         #endregion
 
         #endregion
@@ -243,7 +258,7 @@ namespace UIApp.ViewModel
             }
             return result;
         }
-        
+
         #endregion
 
         #region Private Methods

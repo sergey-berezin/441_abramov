@@ -8,6 +8,7 @@ namespace UIApp.ViewModel.FileEntities
 {
     public sealed class ImageViewModel : FileViewModel
     {
+        public ImageViewModel() : base() { }
 
         public ImageViewModel(string path) : base(new FileInfo(path)) =>          
             Bitmap = new BitmapImage(new Uri(path));

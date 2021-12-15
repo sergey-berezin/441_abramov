@@ -2,6 +2,8 @@
 {
     public abstract class FileEntityViewModel : BaseViewModel
     {
+        protected FileEntityViewModel() { }
+        
         protected FileEntityViewModel(string name) => Name = name;
 
         public string Name { get; set; }

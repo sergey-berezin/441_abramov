@@ -29,17 +29,33 @@
     <Grid x:Name="MainGrid">
 
         <Grid.RowDefinitions>
-            <RowDefinition Height="50"/>
+            <RowDefinition Height="70"/>
             <!-- Navigation panel -->
             <RowDefinition Height="*"/>
             <!-- Data -->
         </Grid.RowDefinitions>
 
         <Grid x:Name="NavagationLayer" Grid.Row="0">
-            <Grid x:Name="LinkLayer" 
-                  Grid.Row="0"
-                  Margin="5,5,5,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="25"/>
+                <RowDefinition Height="50"/>
+            </Grid.RowDefinitions>
 
+            <Grid x:Name="MenuLayer" Margin="5,5,0,0">
+                <Menu Background="White" Margin="5,0,0,0">
+                    <MenuItem Header="Storage" 
+                              HorizontalAlignment="Center" 
+                              VerticalAlignment="Center" 
+                              FontSize="12" 
+                              BorderThickness="0.5" 
+                              BorderBrush="Black"
+                              Command="{Binding OpenStorageWindow}"/>
+                </Menu>
+            </Grid>
+            
+            <Grid x:Name="LinkLayer" 
+                  Grid.Row="1"
+                  Margin="5,0,5,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="40"/>
                     <!-- MoveBack Button -->
