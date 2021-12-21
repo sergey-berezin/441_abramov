@@ -87,6 +87,54 @@ namespace DataStorage
             return byteArray;
         }        
 
+        public static IEnumerable<KeyValuePair<byte[], List<RecognizedObject>>> SelectImagesByCategory(string category)
+        {
+            IEnumerable<ImageInfo> query;
+            using (var db = new ImagesLibraryContext())
+            {
+                if (category != null)
+                {
+                    query = db.ImagesInfo.Include(imgInfo => imgInfo.RecognizedObjects)
+                                         .Where(imgInfo => imgInfo.RecognizedObjects
+                                                                  .Select(obj => obj.CategoryName.ToLower())
+                                                                  .Contains(category.ToLower()))
+                                         .Include(imgInfo => imgInfo.ImageInfoDetails)
+                                         .AsEnumerable();
+                }
+                else
+                {
+                    query = db.ImagesInfo.Include(imgInfo => imgInfo.RecognizedObjects)
+                                         .Include(imgInfo => imgInfo.ImageInfoDetails)
+                                         .AsEnumerable();
+                }
+
+                foreach (var imgInfo in query)
+                {
+                    yield return new KeyValuePair<byte[], List<RecognizedObject>>
+                        (
+                            imgInfo.ImageInfoDetails.Image, 
+                            new List<RecognizedObject>(imgInfo.RecognizedObjects)
+                        );
+                }
+            }
+
+        }
+
+        public static IEnumerable<string> SelectUniqueCategories()
+        {
+            List<string> categories = new List<string>();
+            using (var db = new ImagesLibraryContext())
+            {
+                var query = db.ImagesInfo.Include(imgInfo => imgInfo.RecognizedObjects)
+                                         .Select(imgInfo => imgInfo.RecognizedObjects);
+                foreach (var range in query)
+                {
+                    categories.AddRange(range.Select(r => r.CategoryName));
+                }
+            }
+            return categories.Distinct();
+        }
+
         public static void RemoveItem(ImageInfo imageInfo)
         {
             using (var db = new ImagesLibraryContext())
