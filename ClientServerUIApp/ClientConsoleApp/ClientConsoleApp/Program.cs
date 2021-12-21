@@ -1,7 +1,6 @@
 ﻿using System;
 using ClientLib;
 using System.Linq;
-
 using System.IO;
 using System.Drawing;
 using System.Net.Http;
