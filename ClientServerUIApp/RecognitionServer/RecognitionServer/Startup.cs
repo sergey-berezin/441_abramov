@@ -27,6 +27,7 @@ namespace RecognitionServer
             }
 
             app.UseRouting();
+            app.UseCors(cor => cor.AllowAnyOrigin().AllowAnyMethod());
 
             app.UseEndpoints(endpoints =>
             {

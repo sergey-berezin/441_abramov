@@ -1,0 +1,52 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>WebAPI</title>
+    <link rel="stylesheet" type="text/css" href="APIStyles.css">
+</head>
+<body>
+    <div class="api-header">
+        WebAPI for object recognition
+    </div>
+
+    <div class="selector">
+        <select class="selector-list">
+            <option class="selector-list-element" value="None">None</option>
+        </select>
+    </div>
+
+    <div class="slider">
+        <ul class="slider-list">
+            
+        </ul>
+        <div class="slider-arrow-left"></div>
+        <div class="slider-arrow-right"></div>
+        <div class="scroll-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Confidence</th>
+                    </tr>
+                </thead>
+            </table>
+            <div class="table-content">
+                <table>
+                    <tbody id="table-body">
+                        <tr>
+                            
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script src="SliderArrow.js"></script>
+    <script src="Slider.js"></script>
+    <script src="Selector.js"></script>
+    <script src="TableContent.js"></script>
+    <script src="APIScript.js"></script>
+</body>
+</html>
